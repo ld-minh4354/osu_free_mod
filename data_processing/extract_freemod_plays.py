@@ -16,8 +16,8 @@ class ExtractFreemodPlays:
         self.end_year = end_year
 
         
-        self.df_all_freemod_plays = pd.DataFrame(columns=["red_pot", "red_score", "red_hdhr", "red_hd", "red_hr",
-                                                          "blue_pot", "blue_score", "blue_hdhr", "blue_hd", "blue_hr",
+        self.df_all_freemod_plays = pd.DataFrame(columns=["red_pot", "red_score", "red_hd", "red_hr",
+                                                          "blue_pot", "blue_score", "blue_hd", "blue_hr",
                                                           "red_win_probability"])
 
     
@@ -123,36 +123,28 @@ class ExtractFreemodPlays:
                 beatmap_id = int(game["beatmap_id"])
 
                 if beatmap_id in self.freemod[year][stage]:
-                    red_score = red_hdhr = red_hd = red_hr = 0
-                    blue_score = blue_hdhr = blue_hd = blue_hr = 0
+                    red_score = red_hd = red_hr = 0
+                    blue_score = blue_hd = blue_hr = 0
 
                     for play in game["scores"]:
-                        score = play["score"]
-                        pick_hr = ("HR" in play["mods"])
-                        pick_hd = ("HD" in play["mods"])
-
                         if play["match"]["team"] == "red":
-                            red_score += score
-                            if pick_hd and pick_hr:
-                                red_hdhr += 1
-                            elif pick_hd:
+                            red_score += play["score"]
+                            if "HD" in play["mods"]:
                                 red_hd += 1
-                            elif pick_hr:
+                            if "HR" in play["mods"]:
                                 red_hr += 1
                         else:
-                            blue_score += score
-                            if pick_hd and pick_hr:
-                                blue_hdhr += 1
-                            elif pick_hd:
+                            blue_score += play["score"]
+                            if "HD" in play["mods"]:
                                 blue_hd += 1
-                            elif pick_hr:
+                            if "HR" in play["mods"]:
                                 blue_hr += 1
 
                     if red_score > 0 and blue_score > 0:
                         new_row = {"red_pot": red_pot, "red_score": red_score,
-                                   "red_hdhr": red_hdhr, "red_hd": red_hd, "red_hr": red_hr,
+                                   "red_hd": red_hd, "red_hr": red_hr,
                                    "blue_pot": blue_pot, "blue_score": blue_score,
-                                   "blue_hdhr": blue_hdhr, "blue_hd": blue_hd, "blue_hr": blue_hr,
+                                   "blue_hd": blue_hd, "blue_hr": blue_hr,
                                    "red_win_probability": 0.5}
                         
                         self.df_all_freemod_plays.loc[len(self.df_all_freemod_plays)] = new_row
