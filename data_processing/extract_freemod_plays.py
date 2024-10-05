@@ -3,6 +3,8 @@ import os
 import sys
 import json
 import requests
+import numpy as np
+from scipy.stats import norm
 
 class ExtractFreemodPlays:
     def __init__(self, start_year, end_year):
@@ -14,8 +16,9 @@ class ExtractFreemodPlays:
         self.end_year = end_year
 
         
-        self.df_all_freemod_matches = pd.DataFrame(columns=["red_pot", "red_score", "red_hdhr", "red_hd", "red_hr",
-                                                            "blue_pot", "blue_score", "blue_hdhr", "blue_hd", "blue_hr"])
+        self.df_all_freemod_plays = pd.DataFrame(columns=["red_pot", "red_score", "red_hdhr", "red_hd", "red_hr",
+                                                          "blue_pot", "blue_score", "blue_hdhr", "blue_hd", "blue_hr",
+                                                          "red_win_probability"])
 
     
     def add_project_folder_to_pythonpath(self):
@@ -102,12 +105,10 @@ class ExtractFreemodPlays:
         return match_json
     
 
-    def save_all_freemod_plays(self):
+    def get_all_freemod_plays(self):
         for year in range(self.start_year, self.end_year + 1):
             for index, row in self.df_matches[year].iterrows():
                 self.get_freemod_play(year=year, red_team=row["red_team"], blue_team=row["blue_team"], match_id=int(row["match_id"]), stage=int(row["stage"]))
-        
-        self.df_all_freemod_matches.to_csv(os.path.join("data", "data_processing", "freemod_plays.csv"), index=False)
     
 
     def get_freemod_play(self, year, red_team, blue_team, match_id, stage):
@@ -151,11 +152,29 @@ class ExtractFreemodPlays:
                         new_row = {"red_pot": red_pot, "red_score": red_score,
                                    "red_hdhr": red_hdhr, "red_hd": red_hd, "red_hr": red_hr,
                                    "blue_pot": blue_pot, "blue_score": blue_score,
-                                   "blue_hdhr": blue_hdhr, "blue_hd": blue_hd, "blue_hr": blue_hr}
+                                   "blue_hdhr": blue_hdhr, "blue_hd": blue_hd, "blue_hr": blue_hr,
+                                   "red_win_probability": 0.5}
                         
-                        self.df_all_freemod_matches.loc[len(self.df_all_freemod_matches)] = new_row
+                        self.df_all_freemod_plays.loc[len(self.df_all_freemod_plays)] = new_row
 
 
+    def calculate_win_probability(self):
+        ln_ratio_list = []
+
+        for index, row in self.df_all_freemod_plays.iterrows():
+            ln_ratio = np.log(row["red_score"] / row["blue_score"])
+            ln_ratio_list.append(ln_ratio)
+            ln_ratio_list.append(-ln_ratio)
+        
+        mu, sigma = norm.fit(ln_ratio_list)
+
+        for index, row in self.df_all_freemod_plays.iterrows():
+            ln_ratio = np.log(row["red_score"] / row["blue_score"])
+            self.df_all_freemod_plays.loc[index, "red_win_probability"] = 1 - norm.cdf(-ln_ratio, loc=mu, scale=sigma)
+
+
+    def save_freemod_plays(self):
+        self.df_all_freemod_plays.to_csv(os.path.join("data", "data_processing", "freemod_plays.csv"), index=False)
 
 
 
@@ -170,4 +189,8 @@ if __name__ == "__main__":
 
     #extract_freemod_plays.get_freemod_match(2019, "Australia", "Finland", 56299664, 1)
 
-    extract_freemod_plays.save_all_freemod_plays()
+    extract_freemod_plays.get_all_freemod_plays()
+
+    extract_freemod_plays.calculate_win_probability()
+
+    extract_freemod_plays.save_freemod_plays()
