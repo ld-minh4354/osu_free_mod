@@ -164,6 +164,10 @@ class ExtractFreemodPlays:
             ln_ratio = np.log(row["red_score"] / row["blue_score"])
             self.df_all_freemod_plays.loc[index, "red_win_probability"] = 1 - norm.cdf(-ln_ratio, loc=mu, scale=sigma)
 
+    
+    def cleaning_data(self):
+        self.df_all_freemod_plays = self.df_all_freemod_plays[self.df_all_freemod_plays["blue_hr"] != 0]
+
 
     def save_freemod_plays(self):
         self.df_all_freemod_plays.to_csv(os.path.join("data", "data_processing", "freemod_plays.csv"), index=False)
@@ -184,5 +188,7 @@ if __name__ == "__main__":
     extract_freemod_plays.get_all_freemod_plays()
 
     extract_freemod_plays.calculate_win_probability()
+
+    extract_freemod_plays.cleaning_data()
 
     extract_freemod_plays.save_freemod_plays()
