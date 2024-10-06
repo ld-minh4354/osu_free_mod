@@ -27,7 +27,7 @@ class MachineLearning:
         x = self.df_freemod_plays[["red_pot", "red_hd", "red_hr", "blue_pot", "blue_hd", "blue_hr"]].values
         y = self.df_freemod_plays["red_win_probability"].values
 
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.2, random_state=12345)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.1, random_state=67890)
 
 
     def save_ml_model(self):
