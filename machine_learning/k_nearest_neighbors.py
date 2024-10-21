@@ -2,13 +2,14 @@ import os
 import sys
 import pickle 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import root_mean_squared_error
 from math import sqrt
 
-class MachineLearning:
+class KNearestNeighbors:
     def __init__(self):
         self.add_project_folder_to_pythonpath()
 
@@ -48,9 +49,14 @@ class MachineLearning:
 
     def evaluate_ml_model(self):
         train_preds = self.knn_model.predict(self.X_test)
-        self.rmse = sqrt(mean_squared_error(self.y_test, train_preds))
+        self.rmse = sqrt(root_mean_squared_error(self.y_test, train_preds))
 
-        print(f"Root Mean Squared Error: {self.rmse}")
+        print(f"Root Mean Squared Error: {self.rmse:.5f}")
+
+        matching_positions = ((train_preds > 0.5) & (self.y_test > 0.5)) | ((train_preds < 0.5) & (self.y_test < 0.5))
+        percentage = np.sum(matching_positions) / train_preds.size * 100
+
+        print(f"Percentage of Match Outcomes Predicted Correctly: {percentage:.2f}")
     
 
     def get_rmse(self):
@@ -59,7 +65,7 @@ class MachineLearning:
 
 
 if __name__ == "__main__":
-    machine_learnng = MachineLearning()
-    machine_learnng.get_input_output()
-    machine_learnng.train_ml_model()
-    machine_learnng.evaluate_ml_model()
+    k_nearest_neighbors = KNearestNeighbors()
+    k_nearest_neighbors.get_input_output()
+    k_nearest_neighbors.train_ml_model()
+    k_nearest_neighbors.evaluate_ml_model()
