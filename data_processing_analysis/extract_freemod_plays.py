@@ -18,9 +18,7 @@ class ExtractFreemodPlays:
 
         self.tournament_list = self.df_freemod["tournament"].unique().tolist()
         
-        self.df_all_freemod_plays = pd.DataFrame(columns=["red_pot", "red_score", "red_hd", "red_hr",
-                                                          "blue_pot", "blue_score", "blue_hd", "blue_hr",
-                                                          "red_win_probability"])
+        self.df_all_freemod_plays = pd.DataFrame(columns=["pot", "stage", "hd", "hr", "score_ratio", "win_probability"])
 
         print("Finish initialization.\n")
 
@@ -114,7 +112,7 @@ class ExtractFreemodPlays:
 
     def get_freemod_play(self, tournament, red_team, blue_team, match_id, stage):
         total_teams = len(self.seed[tournament])
-        pot_size = total_teams // 4
+        pot_size = total_teams // 8
 
         red_pot = (self.seed[tournament][red_team] - 1) // pot_size + 1
         blue_pot = (self.seed[tournament][blue_team] - 1) // pot_size + 1
@@ -155,12 +153,12 @@ class ExtractFreemodPlays:
                     #print(red_score, blue_score, red_hr, red_hd, blue_hr, blue_hd, correct_mod)
 
                     if red_score > 0 and blue_score > 0 and red_hr > 0 and red_hd > 0 and blue_hr > 0 and blue_hd > 0 and correct_mod:
-                        new_row = {"red_pot": red_pot, "red_score": red_score,
-                                   "red_hd": red_hd, "red_hr": red_hr,
-                                   "blue_pot": blue_pot, "blue_score": blue_score,
-                                   "blue_hd": blue_hd, "blue_hr": blue_hr,
-                                   "red_win_probability": 0.5}
-                        
+                        new_row = {"pot": red_pot, "hd": red_hd, "hr": red_hr, "stage": stage,
+                                   "score_ratio": red_score / blue_score, "win_probability": 0.5}
+                        self.df_all_freemod_plays.loc[len(self.df_all_freemod_plays)] = new_row
+
+                        new_row = {"pot": blue_pot, "hd": blue_hd, "hr": blue_hr, "stage": stage,
+                                   "score_ratio": blue_score / red_score, "win_probability": 0.5}
                         self.df_all_freemod_plays.loc[len(self.df_all_freemod_plays)] = new_row
 
 
@@ -168,15 +166,14 @@ class ExtractFreemodPlays:
         ln_ratio_list = []
 
         for index, row in self.df_all_freemod_plays.iterrows():
-            ln_ratio = np.log(row["red_score"] / row["blue_score"])
+            ln_ratio = np.log(row["score_ratio"])
             ln_ratio_list.append(ln_ratio)
-            ln_ratio_list.append(-ln_ratio)
         
         mu, sigma = norm.fit(ln_ratio_list)
 
         for index, row in self.df_all_freemod_plays.iterrows():
-            ln_ratio = np.log(row["red_score"] / row["blue_score"])
-            self.df_all_freemod_plays.loc[index, "red_win_probability"] = 1 - norm.cdf(-ln_ratio, loc=mu, scale=sigma)
+            ln_ratio = np.log(row["score_ratio"])
+            self.df_all_freemod_plays.loc[index, "win_probability"] = 1 - norm.cdf(-ln_ratio, loc=mu, scale=sigma)
         
         print("Finish calculating win probability.\n")
 

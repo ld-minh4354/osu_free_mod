@@ -4,12 +4,12 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import Lasso
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import root_mean_squared_error
 from math import sqrt
 
-class KNearestNeighborsModel:
+class LassoRegressionModel:
     def __init__(self):
         self.add_project_folder_to_pythonpath()
 
@@ -28,26 +28,18 @@ class KNearestNeighborsModel:
 
     def get_input_output(self):
         x = self.df_freemod_plays[["pot", "stage", "hd", "hr"]].values
-        y = self.df_freemod_plays["win_probability"].values
+        y = self.df_freemod_plays["score_ratio"].values
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.2, random_state=67890)
 
         print("Finish getting inputs and outputs.\n")
 
+        print(type(self.X_test[0]))
 
-    def save_ml_model(self):
-        knnPickle = open(os.path.join("data", "machine_learning", "knn_model"), "wb") 
-        pickle.dump(self.model, knnPickle)  
-        knnPickle.close()
-
-    
-    def load_ml_model(self):
-        return pickle.load(open(os.path.join("data", "machine_learning", "knn_model"), "rb"))
-    
 
     def train_ml_model(self):
-        parameters = {"n_neighbors": range(1, 50), "weights": ["uniform", "distance"]}
-        self.model = GridSearchCV(KNeighborsRegressor(), parameters)
+        parameters = {"alpha": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0]}
+        self.model = GridSearchCV(Lasso(), parameters)
         self.model.fit(self.X_train, self.y_train)
 
         print("Finish training model.\n")
@@ -57,9 +49,11 @@ class KNearestNeighborsModel:
         train_preds = self.model.predict(self.X_test)
         self.rmse = sqrt(root_mean_squared_error(self.y_test, train_preds))
 
+        print(self.model.predict(np.array([np.array([1, 6, 3, 3])])))
+
         print(f"Root Mean Squared Error: {self.rmse:.5f}")
 
-        matching_positions = ((train_preds > 0.5) & (self.y_test > 0.5)) | ((train_preds < 0.5) & (self.y_test < 0.5))
+        matching_positions = ((train_preds > 1) & (self.y_test > 1)) | ((train_preds < 1) & (self.y_test < 1))
         percentage = np.sum(matching_positions) / train_preds.size * 100
 
         print(f"Percentage of Match Outcomes Predicted Correctly: {percentage:.2f}")
@@ -71,7 +65,7 @@ class KNearestNeighborsModel:
 
 
 if __name__ == "__main__":
-    model = KNearestNeighborsModel()
+    model = LassoRegressionModel()
     model.get_input_output()
     model.train_ml_model()
     model.evaluate_ml_model()

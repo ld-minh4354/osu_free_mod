@@ -4,12 +4,12 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import Ridge
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import root_mean_squared_error
 from math import sqrt
 
-class KNearestNeighborsModel:
+class RidgeRegressionModel:
     def __init__(self):
         self.add_project_folder_to_pythonpath()
 
@@ -27,27 +27,17 @@ class KNearestNeighborsModel:
 
 
     def get_input_output(self):
-        x = self.df_freemod_plays[["pot", "stage", "hd", "hr"]].values
-        y = self.df_freemod_plays["win_probability"].values
+        x = self.df_freemod_plays[["red_pot", "red_hd", "red_hr", "blue_pot", "blue_hd", "blue_hr"]].values
+        y = self.df_freemod_plays["red_win_probability"].values
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.2, random_state=67890)
 
         print("Finish getting inputs and outputs.\n")
 
 
-    def save_ml_model(self):
-        knnPickle = open(os.path.join("data", "machine_learning", "knn_model"), "wb") 
-        pickle.dump(self.model, knnPickle)  
-        knnPickle.close()
-
-    
-    def load_ml_model(self):
-        return pickle.load(open(os.path.join("data", "machine_learning", "knn_model"), "rb"))
-    
-
     def train_ml_model(self):
-        parameters = {"n_neighbors": range(1, 50), "weights": ["uniform", "distance"]}
-        self.model = GridSearchCV(KNeighborsRegressor(), parameters)
+        parameters = {"alpha": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0, 100.0]}
+        self.model = GridSearchCV(Ridge(), parameters)
         self.model.fit(self.X_train, self.y_train)
 
         print("Finish training model.\n")
@@ -71,7 +61,7 @@ class KNearestNeighborsModel:
 
 
 if __name__ == "__main__":
-    model = KNearestNeighborsModel()
+    model = RidgeRegressionModel()
     model.get_input_output()
     model.train_ml_model()
     model.evaluate_ml_model()

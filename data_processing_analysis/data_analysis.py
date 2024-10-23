@@ -1,6 +1,10 @@
 import pandas as pd
 import os
 import sys
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class DataAnalysis:
@@ -53,6 +57,65 @@ class DataAnalysis:
         df.to_csv(os.path.join("data", "data_analysis", "frequency_mod_choices.csv"), index=True)
 
 
+    def correlation(self, mod):
+        # win_probability[(pot, mod count)] = average win probability
+        pot_win_probability = dict()
+        pot_frequency = dict()
+
+        for pot in range(1, 8+1):
+            for mod_count in range(1, 4+1):
+                pot_win_probability[(pot, mod_count)] = 0
+                pot_frequency[(pot, mod_count)] = 0
+
+        print(self.df_freemod_plays)
+
+        for index, row in self.df_freemod_plays.iterrows():
+            pot = int(row["pot"])
+            mod_cnt = int(row[mod])
+            win_probability = row["win_probability"]
+
+            pot_win_probability[(pot, mod_cnt)] += win_probability * 100
+            pot_frequency[(pot, mod_cnt)] += 1
+        
+        df_correlation = pd.DataFrame(columns=["pot", "1_mod", "2_mod", "3_mod", "slope"])
+
+        for pot in range(1, 8+1):
+            if pot_frequency[(pot, 1)] * pot_frequency[(pot, 2)] * pot_frequency[(pot, 3)] * pot_frequency[(pot, 4)] > 0:
+                
+                win_prob_1 = pot_win_probability[(pot, 1)] / pot_frequency[(pot, 1)]
+                win_prob_2 = pot_win_probability[(pot, 2)] / pot_frequency[(pot, 2)]
+                win_prob_3 = pot_win_probability[(pot, 3)] / pot_frequency[(pot, 3)]
+                win_prob_4 = pot_win_probability[(pot, 4)] / pot_frequency[(pot, 4)]
+
+                points = [(1, win_prob_1), (2, win_prob_2), (3, win_prob_3), (4, win_prob_4)]
+                x_values, y_values = zip(*points)
+                slope, intercept = np.polyfit(x_values, y_values, 1)
+
+                new_row = {"pot": pot,
+                           "1_mod": win_prob_1, "2_mod": win_prob_2, "3_mod": win_prob_3, "4_mod": win_prob_4,
+                           "slope": slope}
+                
+                df_correlation.loc[len(df_correlation)] = new_row
+        
+        points = []
+        for index, row in df_correlation.iterrows():
+            points.append((row["pot"], row["slope"]))
+        
+        x_values, y_values = zip(*points)
+        slope, intercept = np.polyfit(x_values, y_values, 1)
+
+        new_row = {"pot": "overall",
+                    "1_mod": "", "2_mod": "", "3_mod": "", "4_mod": "",
+                    "slope": slope}
+        
+        df_correlation.loc[len(df_correlation)] = new_row
+        
+        df_correlation.to_csv(os.path.join("data", "data_analysis", f"correlation_{mod}.csv"), index=False)
+
+
+
 
 if __name__ == "__main__":
     data_analysis = DataAnalysis()
+    data_analysis.correlation("hd")
+    data_analysis.correlation("hr")

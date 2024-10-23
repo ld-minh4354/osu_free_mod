@@ -4,12 +4,13 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import NuSVR
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import root_mean_squared_error
 from math import sqrt
 
-class KNearestNeighborsModel:
+class SVMModel:
     def __init__(self):
         self.add_project_folder_to_pythonpath()
 
@@ -32,22 +33,18 @@ class KNearestNeighborsModel:
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.2, random_state=67890)
 
+        scaler = StandardScaler().fit(self.X_train)
+        self.X_train = scaler.transform(self.X_train)
+        self.X_test = scaler.transform(self.X_test)
+
         print("Finish getting inputs and outputs.\n")
 
+        print(type(self.X_test[0]))
 
-    def save_ml_model(self):
-        knnPickle = open(os.path.join("data", "machine_learning", "knn_model"), "wb") 
-        pickle.dump(self.model, knnPickle)  
-        knnPickle.close()
-
-    
-    def load_ml_model(self):
-        return pickle.load(open(os.path.join("data", "machine_learning", "knn_model"), "rb"))
-    
 
     def train_ml_model(self):
-        parameters = {"n_neighbors": range(1, 50), "weights": ["uniform", "distance"]}
-        self.model = GridSearchCV(KNeighborsRegressor(), parameters)
+        parameters = {"kernel": ["linear", "rbf", "poly"]}
+        self.model = GridSearchCV(NuSVR(), parameters)
         self.model.fit(self.X_train, self.y_train)
 
         print("Finish training model.\n")
@@ -56,6 +53,8 @@ class KNearestNeighborsModel:
     def evaluate_ml_model(self):
         train_preds = self.model.predict(self.X_test)
         self.rmse = sqrt(root_mean_squared_error(self.y_test, train_preds))
+
+        print(self.model.predict(np.array([np.array([1, 6, 3, 3])])))
 
         print(f"Root Mean Squared Error: {self.rmse:.5f}")
 
@@ -71,7 +70,7 @@ class KNearestNeighborsModel:
 
 
 if __name__ == "__main__":
-    model = KNearestNeighborsModel()
+    model = SVMModel()
     model.get_input_output()
     model.train_ml_model()
     model.evaluate_ml_model()

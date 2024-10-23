@@ -4,12 +4,12 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import root_mean_squared_error
 from math import sqrt
 
-class KNearestNeighborsModel:
+class LinearRegressionModel:
     def __init__(self):
         self.add_project_folder_to_pythonpath()
 
@@ -35,19 +35,8 @@ class KNearestNeighborsModel:
         print("Finish getting inputs and outputs.\n")
 
 
-    def save_ml_model(self):
-        knnPickle = open(os.path.join("data", "machine_learning", "knn_model"), "wb") 
-        pickle.dump(self.model, knnPickle)  
-        knnPickle.close()
-
-    
-    def load_ml_model(self):
-        return pickle.load(open(os.path.join("data", "machine_learning", "knn_model"), "rb"))
-    
-
     def train_ml_model(self):
-        parameters = {"n_neighbors": range(1, 50), "weights": ["uniform", "distance"]}
-        self.model = GridSearchCV(KNeighborsRegressor(), parameters)
+        self.model = LinearRegression()
         self.model.fit(self.X_train, self.y_train)
 
         print("Finish training model.\n")
@@ -71,7 +60,7 @@ class KNearestNeighborsModel:
 
 
 if __name__ == "__main__":
-    model = KNearestNeighborsModel()
+    model = LinearRegressionModel()
     model.get_input_output()
     model.train_ml_model()
     model.evaluate_ml_model()
